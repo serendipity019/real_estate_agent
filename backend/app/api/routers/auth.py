@@ -21,14 +21,6 @@ from app.utils import (
 
 router = APIRouter(tags=["Login"])
 
-@router.post("/login")
-def login(user: UserLogin, session: Session = Depends(get_session)):
-    settings = get_settings()
-    db_user = authenticate(session, user.email, user.password)
-    if not db_user: raise HTTPException(401)
-    token = create_access_token(str(db_user.id), timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    return {"access_token": token, "token_type": "bearer"}
-
 @router.post("/login/access-token")
 def login_access_token(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
