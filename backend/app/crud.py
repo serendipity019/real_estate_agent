@@ -1,11 +1,18 @@
+import json
 import uuid
 from typing import Any
 
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
-from app.models import User, UserCreate, UserUpdate
+from app.models.history import SearchHistory
+from app.models.user import User 
+from app.models.search_session import SearchSession
+from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.chat import ChatMessage
 
+# ── User CRUD ──────────────────────────────────────────────────────────────────
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
     db_obj = User.model_validate(
@@ -58,3 +65,76 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
         session.commit()
         session.refresh(db_user)
     return db_user
+
+# ── SearchSession CRUD ───────────────────────────────────────────────────────────
+
+def create_search_session(
+    *, session: Session, owner_id: uuid.UUID, title: str = "Untitled Search"
+) -> SearchSession:
+    """Create a brand-new chat session for a user."""
+    db_obj = SearchSession(owner_id=owner_id, title=title, memory="[]")
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+def get_search_session(
+    *, session: Session, session_id: uuid.UUID
+) -> SearchSession | None:
+    return session.get(SearchSession, session_id)
+
+def load_memory(search_session: SearchSession) -> list[ChatMessage]:
+    """Deserialize SearchSession.memory (JSON text) into ChatMessage objects."""
+    try:
+        raw = json.loads(search_session.memory or "[]")
+    except (json.JSONDecodeError, TypeError):
+        raw = []
+    return [ChatMessage(**turn) for turn in raw]
+
+def save_memory(
+    *, session: Session, search_session: SearchSession, turns: list[ChatMessage]
+) -> SearchSession:
+    """
+    Serialize the given turns back into SearchSession.memory, capped to the
+    most recent settings.MAX_MEMORY_TURNS turns to keep the cache small.
+    """
+    from datetime import datetime, timezone
+
+    capped = turns[-settings.MAX_MEMORY_TURNS:]
+    search_session.memory = json.dumps([t.model_dump() for t in capped])
+    search_session.updated_at = datetime.now(timezone.utc)
+    session.add(search_session)
+    session.commit()
+    session.refresh(search_session)
+    return search_session
+
+# ── SearchHistory CRUD ───────────────────────────────────────────────────────────
+
+def create_history_entry(
+    *,
+    session: Session,
+    session_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    query: str,
+    result: str | None = None,
+) -> SearchHistory:
+    """Insert one durable row recording a single query/answer turn."""
+    db_obj = SearchHistory(
+        session_id=session_id, owner_id=owner_id, query=query, result=result
+    )
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+def get_history_for_session(
+    *, session: Session, session_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[SearchHistory]:
+    statement = (
+        select(SearchHistory)
+        .where(SearchHistory.session_id == session_id)
+        .order_by(SearchHistory.created_at.asc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())
