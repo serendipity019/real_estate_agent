@@ -1,22 +1,26 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import col, delete, func, select
+from sqlmodel import col, func, select
 from typing import Any
 
 from api.depedencies import SessionDep, CurrentUser, required_active_superuser
-from app.crud import get_user_by_email, create_user
-from app.core.config import get_settings
+from app.crud import (
+    get_user_by_email,
+    create_user as crud_create_user,
+    update_user as crud_update_user
+) 
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
-from app.schemas.authentication_generic import UpdatePassword, Message, NewPassword
+from app.schemas.authentication_generic import UpdatePassword, Message
 from app.schemas.user import (
     UserRegister, UserPublic, 
     UserUpdate, UserCreate,
     UsersPublic, UserUpdateMe)
 from app.utils import generate_new_account_email, send_email
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get(
     "/",
@@ -42,7 +46,7 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 @router.post(
     "/", dependencies=[Depends(required_active_superuser)], response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_new_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
@@ -53,8 +57,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             detail="The user with this email already exists in the system.",
         )
 
-    user = create_user(session=session, user_create=user_in)
-    settings = get_settings()
+    user = crud_create_user(session=session, user_create=user_in)
 
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
@@ -141,7 +144,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
             detail="The user with this email already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
-    user = create_user(session=session, user_create=user_create)
+    user = crud_create_user(session=session, user_create=user_create)
     return user
 
 @router.get("/{user_id}", response_model=UserPublic)
@@ -168,14 +171,14 @@ def read_user_by_id(
     dependencies=[Depends(required_active_superuser)],
     response_model=UserPublic,
 )
-def update_user(
+def update_user_by_id(
     *,
     session: SessionDep,
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
     """
-    Update a user.
+    Update a user by id.
     """
 
     db_user = session.get(User, user_id)
@@ -191,7 +194,7 @@ def update_user(
                 status_code=409, detail="User with this email already exists"
             )
 
-    db_user = update_user(session=session, db_user=db_user, user_in=user_in)
+    db_user = crud_update_user(session=session, db_user=db_user, user_in=user_in)
     return db_user
 
 @router.delete("/{user_id}", dependencies=[Depends(required_active_superuser)])
