@@ -3,7 +3,7 @@ routers/health.py — Liveness and readiness endpoints.
 """
 from fastapi import APIRouter, Depends
 
-from api.depedencies import required_active_superuser
+from app.api.depedencies import required_active_superuser
 from app.schemas.rag_schemas import HealthResponse
 from app.rag.pipeline import RAGPipeline, get_pipeline
 from app.core.config import settings

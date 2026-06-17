@@ -9,7 +9,7 @@ from app.core.security import create_access_token
 from app.schemas.user import UserPublic, UserUpdate
 from app.schemas.authentication_generic import Token, Message, NewPassword
 from app.crud import authenticate, get_user_by_email, update_user
-from api.depedencies import SessionDep, CurrentUser, required_active_superuser
+from app.api.depedencies import SessionDep, CurrentUser, required_active_superuser
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
