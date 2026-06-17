@@ -2,13 +2,11 @@ from datetime import timedelta
 from fastapi import HTTPException, Depends, APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session
 from typing import Annotated, Any
 
-from app.core.config import get_settings
-from app.core.db import get_session
+from app.core.config import settings
 from app.core.security import create_access_token
-from app.schemas.user import UserLogin, UserPublic, UserUpdate
+from app.schemas.user import UserPublic, UserUpdate
 from app.schemas.authentication_generic import Token, Message, NewPassword
 from app.crud import authenticate, get_user_by_email, update_user
 from api.depedencies import SessionDep, CurrentUser, required_active_superuser
@@ -28,7 +26,6 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    settings= get_settings()
     user = authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
