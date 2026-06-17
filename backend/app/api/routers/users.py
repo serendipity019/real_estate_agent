@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
 from typing import Any
 
-from api.depedencies import SessionDep, CurrentUser, required_active_superuser
+from app.api.depedencies import SessionDep, CurrentUser, required_active_superuser
 from app.crud import (
     get_user_by_email,
     create_user as crud_create_user,
