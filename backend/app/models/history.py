@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class SearchHistory(SearchHistoryBase, table=True):
     """
     This is the durable, queryable source of truth for the full conversation —
-    unlike SearchSession.memory, which is just a fast-path cache of recent turns.
+    unlike SearchSession.memory, — used by admin dashboards, analytics, and anywhere per-turn detail/timestamps matter.
     """
     __tablename__ = "search_history"
 
