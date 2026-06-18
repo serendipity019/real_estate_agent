@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, List
 from sqlmodel import Field, Relationship
 import uuid
 
-from schemas.search_session import SearchSessionBase
+from app.schemas.search_session import SearchSessionBase
 
 if TYPE_CHECKING:
-    from models.user import User
-    from models.history import SearchHistory
+    from app.models.user import User
+    from app.models.history import SearchHistory
 
 # -----------------------------------------------------------------------------
 # Searching agent session model
@@ -41,7 +41,7 @@ class SearchSession(SearchSessionBase, table=True):
     # ORM relationships.
     # owner: the User that owns the session.
     # history: all SearchHistory rows belonging to this session.
-    owner: User = Relationship(back_populates="search_sessions")
+    owner: "User" = Relationship(back_populates="search_sessions")
     history: List["SearchHistory"] = Relationship(
         back_populates="session", cascade_delete=True
     )

@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship
 
-from models.search_session import SearchSession
-from schemas.user import UserBase
+from app.models.search_session import SearchSession
+from app.schemas.user import UserBase
 
 # -----------------------------------------------------------------------------
 # SQLModel notes

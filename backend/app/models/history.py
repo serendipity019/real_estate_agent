@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship
 import uuid
 
-from schemas.history import SearchHistoryBase
+from app.schemas.history import SearchHistoryBase
 
 if TYPE_CHECKING:
-    from models.user import User
-    from models.search_session import SearchSession
+    from app.models.user import User
+    from app.models.search_session import SearchSession
 
 # -----------------------------------------------------------------------------
 # Search history model
@@ -37,5 +37,5 @@ class SearchHistory(SearchHistoryBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # ORM relationships for navigation in Python code.
-    session: SearchSession = Relationship(back_populates="history")
-    owner: User = Relationship()
+    session: "SearchSession" = Relationship(back_populates="history")
+    owner: "User" = Relationship()
