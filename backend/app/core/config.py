@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
         return PostgresDsn.build(
-            scheme="postgresql+psycopg",
+            scheme="postgresql+psycopg2",
             username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD,
             host=self.POSTGRES_SERVER,
@@ -94,9 +94,9 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     #  First superuser  ─────────────────────────────────────────────────────────
-    EMAIL_TEST_USER: EmailStr = "test@example.com"
-    FIRST_SUPERUSER: EmailStr = "admin@example.com"
-    FIRST_SUPERUSER_PASSWORD: str = "changethis"
+    EMAIL_TEST_USER: EmailStr = "navagio09@gmail.com"
+    FIRST_SUPERUSER: EmailStr = "navagio09@gmail.com"
+    FIRST_SUPERUSER_PASSWORD: str = "navagio123456"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
