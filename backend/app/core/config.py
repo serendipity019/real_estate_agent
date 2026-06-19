@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ── Core / Security ─────────────────────────────────────────────────────────
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
-    FRONTEND_HOST: str = "http://localhost:5173"
+    FRONTEND_HOST: str = "http://127.0.0.1:8000/ui"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     PROJECT_NAME: str = "Smart Real Estate Assistant"
     SENTRY_DSN: HttpUrl | None = None
@@ -94,9 +94,9 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     #  First superuser  ─────────────────────────────────────────────────────────
-    EMAIL_TEST_USER: EmailStr = "navagio09@gmail.com"
-    FIRST_SUPERUSER: EmailStr = "navagio09@gmail.com"
-    FIRST_SUPERUSER_PASSWORD: str = "navagio123456"
+    EMAIL_TEST_USER: EmailStr = "super@gmail.com"
+    FIRST_SUPERUSER: EmailStr = "super@gmail.com"
+    FIRST_SUPERUSER_PASSWORD: str = "super147963"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
