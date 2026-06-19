@@ -40,7 +40,7 @@ def _resolve_session(
     
     search_session = db_session.get(SearchSession, session_id)
     if not search_session:
-        raise HTTPException(status_code=404, details="Session not found.")
+        raise HTTPException(status_code=404, detail="Session not found.")
     if search_session.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your session.")
     
@@ -120,7 +120,7 @@ def chat(request: ChatRequest, db_session: SessionDep, current_user: CurrentUser
         graph = build_graph()
         # Run the LangGraph — this loops agent ↔ tools until done
         final_state = graph.invoke({"messages": messages})
-        all_messages = final_state("messages")
+        all_messages = final_state["messages"]
 
         # The last message is always the agent's final AIMessage
         last_message = all_messages[-1]
