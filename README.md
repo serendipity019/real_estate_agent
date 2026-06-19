@@ -300,7 +300,7 @@ backend/
 
 ## 📄 Documentation
 
-Για πλήρη τεκμηρίωση της αρχιτεκτονικής, των GenAI τεχνικών και των endpoints, δείτε το αρχείο **[Greek Documentation Smart Real Estate Assistant (PDF)](/docs/Greek_Documentation_Smart_Real_Estate_Assistant.pdf)** στο repository.
+Για πλήρη τεκμηρίωση της αρχιτεκτονικής, των GenAI τεχνικών και των endpoints, δείτε το αρχείο **[Greek Documentation Smart Real Estate Assistant (PDF)](docs/Greek_Documentation_Smart_Real_Estate_Assistant.pdf)** στο repository.
 
 ---
 
