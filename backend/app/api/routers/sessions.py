@@ -10,6 +10,7 @@ should go through a dedicated audit endpoint, not by hijacking ownership checks)
 import uuid
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select, func
+from sqlalchemy import desc
 
 from app.api.depedencies import SessionDep, CurrentUser
 from app.models.search_session import SearchSession
@@ -40,7 +41,7 @@ def list_my_sessions(*, session:SessionDep,
     count = session.exec(count_statement).one()
 
     statement = (select(SearchSession).where(SearchSession.owner_id == current_user.id)
-                 .order_by(-SearchSession.updated_at).offset(skip).limit(limit))
+                 .order_by(desc(SearchSession.updated_at)).offset(skip).limit(limit))
     sessions = session.exec(statement).all()
 
     return SearchSessionsPublic(
