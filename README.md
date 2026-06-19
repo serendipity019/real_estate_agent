@@ -1,71 +1,72 @@
 # 🏠 Smart Real Estate Assistant
 
-**Έξυπνος Βοηθός Ακινήτων για την Ελληνική Αγορά**
+**Smart Real Estate Assistant for the Greek Market**
 
-Μια ολοκληρωμένη εφαρμογή Generative AI που συνδυάζει αναλύσεις αγοράς ακινήτων με υπολογισμούς στεγαστικών δανείων, μέσω φυσικής γλώσσας. Βασίζεται σε FastAPI backend, LangGraph agentic AI, RAG με ChromaDB και Gradio UI.
-
----
-
-## 📋 Περιγραφή
-
-Ο χρήστης μπορεί να κάνει ερωτήσεις στα ελληνικά ή αγγλικά όπως:
-
-- *"Ποιες είναι οι τιμές ακινήτων στο Κολωνάκι;"*
-- *"Υπολόγισέ μου τη μηνιαία δόση για δάνειο 200.000€ με επιτόκιο 3.5% για 20 χρόνια"*
-- *"Πόσο κοστίζει ένα σπίτι στη Γλυφάδα και τι δόση θα έχω;"*
-
-Το σύστημα αποφασίζει αυτόματα ποιο εργαλείο να χρησιμοποιήσει (RAG αναζήτηση ή υπολογιστής δανείου) και επιστρέφει μια δομημένη απάντηση.
+A comprehensive Generative AI application that combines real estate market analysis with mortgage calculations via natural language. It is powered by a FastAPI backend, LangGraph agentic AI, RAG with ChromaDB, and a Gradio UI.
 
 ---
 
-## 🛠️ Τεχνολογίες
+## 📋 Description
 
-| Στρώμα | Τεχνολογία |
-|--------|-----------|
+Users can ask questions in Greek or English, such as:
+
+* *"What are the property prices in Kolonaki?"*
+* *"Calculate my monthly payment for a €200,000 loan with a 3.5% interest rate for 20 years."*
+* *"How much does a house cost in Glyfada and what would my monthly payment be?"*
+
+The system automatically decides which tool to use (RAG search or mortgage calculator) and returns a structured response.
+
+---
+
+## 🛠️ Technologies
+
+| Layer | Technology |
+| --- | --- |
 | Backend | FastAPI, Python 3.12 |
 | AI Agent | LangGraph, LangChain |
-| Κύριο LLM | Claude Sonnet 4.6 (Anthropic) |
+| Primary LLM | Claude Sonnet 4.6 (Anthropic) |
 | Fallback LLM | GPT-4o Mini (OpenAI) |
 | Embeddings | OpenAI text-embedding-3-small |
 | Vector Store | ChromaDB (persistent) |
-| Βάση Δεδομένων | PostgreSQL + SQLModel |
+| Database | PostgreSQL + SQLModel |
 | Authentication | JWT (OAuth2) + Argon2 |
-| UI | Gradio 5, mounted στο FastAPI |
+| UI | Gradio 5, mounted on FastAPI |
 
 ---
 
-## ⚙️ Εγκατάσταση
+## ⚙️ Installation
 
-### Προαπαιτούμενα
+### Prerequisites
 
-- Python 3.12+
-- PostgreSQL 14+
-- Node.js 18+ (μόνο για docx generation scripts)
+* Python 3.12+
+* PostgreSQL 14+
+* Node.js 18+ (only for docx generation scripts)
 
-### Βήματα
+### Steps
 
 ```bash
-# 1. clone the repository
-git clone https://github.com/<your-username>/smart-real-estate-assistant.git
-cd smart-real-estate-assistant
+# 1. Clone the repository
+git clone git@github.com:serendipity019/real_estate_agent.git
+cd real_estate_agent
 
-# 2. Δημιουργία virtual environment
+# 2. Create a virtual environment
 python -m venv .venv
 source .venv/bin/activate      # Linux/Mac
 .venv\Scripts\activate         # Windows
 
-# 3. Εγκατάσταση απαιτούμενων libraries.
+# 3. Install required libraries
 pip install -r requirements.txt
 
-# 4. Αντιγραφή και συμπλήρωση μεταβλητών περιβάλλοντος
+# 4. Copy and fill in environment variables
 cp .env.example .env
-# Ανοίξε το .env και βάλε τα API keys και τα στοιχεία PostgreSQL
+# Open .env and insert your API keys and PostgreSQL credentials
 
-# 5. Δημιουργία βάσης δεδομένων (με Alembic ή απευθείας)
-# Εναλλακτικά, το app δημιουργεί τον superuser αυτόματα κατά την εκκίνηση
+# 5. Create database (via Alembic or directly)
+# Alternatively, the app creates the superuser automatically upon startup
+
 ```
 
-### Μεταβλητές περιβάλλοντος (.env)
+### Environment Variables (.env)
 
 ```env
 # AI Keys
@@ -78,37 +79,41 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 POSTGRES_DB=smart_real_estate
 
-# Superuser (δημιουργείται αυτόματα)
+# Superuser (created automatically)
 FIRST_SUPERUSER=admin@example.com
 FIRST_SUPERUSER_PASSWORD=your_secure_password
 
 # Security
 SECRET_KEY=your_secret_key_here
+
 ```
 
 ---
 
-## 🚀 Εκτέλεση
+## 🚀 Execution
 
 ### Backend
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
 ```
 
-Το API είναι διαθέσιμο στο: `http://localhost:8000`
+The API is available at: `http://localhost:8000`
+
 Swagger UI: `http://localhost:8000/docs`
 
 ### UI (Gradio)
 
-Το UI είναι mounted απευθείας στο FastAPI — **δεν χρειάζεται ξεχωριστή εκτέλεση**.
+The UI is mounted directly onto FastAPI — **no separate execution is required**.
 
-Άνοιξε τον browser στο: **`http://localhost:8000/ui`**
+Open your browser at: **`http://localhost:8000/ui`**
 
 ### Tests
 
 ```bash
 pytest tests/ -v
+
 ```
 
 ---
@@ -116,120 +121,135 @@ pytest tests/ -v
 ## 📡 API Endpoints
 
 ### Authentication
-| Method | Endpoint | Περιγραφή |
-|--------|----------|-----------|
-| `POST` | `/login/access-token` | Σύνδεση, επιστρέφει JWT token |
-| `POST` | `/users/signup` | Εγγραφή νέου χρήστη |
-| `POST` | `/reset-password/` | Επαναφορά κωδικού |
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/login/access-token` | Login, returns JWT token |
+| `POST` | `/users/signup` | New user registration |
+| `POST` | `/reset-password/` | Password reset |
 
 ### Chat & Sessions
-| Method | Endpoint | Περιγραφή |
-|--------|----------|-----------|
-| `POST` | `/chat` | Αποστολή μηνύματος στον AI agent |
-| `POST` | `/sessions/` | Δημιουργία νέας συνομιλίας |
-| `GET` | `/sessions/` | Λίστα συνομιλιών χρήστη |
-| `GET` | `/sessions/{id}/history` | Ιστορικό συνομιλίας |
-| `PATCH` | `/sessions/{id}` | Μετονομασία συνομιλίας |
-| `DELETE` | `/sessions/{id}` | Διαγραφή συνομιλίας |
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/chat` | Send message to the AI agent |
+| `POST` | `/sessions/` | Create a new chat session |
+| `GET` | `/sessions/` | List user chat sessions |
+| `GET` | `/sessions/{id}/history` | Chat session history |
+| `PATCH` | `/sessions/{id}` | Rename chat session |
+| `DELETE` | `/sessions/{id}` | Delete chat session |
 
 ### Knowledge Base (Admin only)
-| Method | Endpoint | Περιγραφή |
-|--------|----------|-----------|
-| `POST` | `/knowledge/ingest` | Εισαγωγή εγγράφου στη γνωσιακή βάση |
-| `POST` | `/knowledge/ingest/batch` | Μαζική εισαγωγή εγγράφων |
-| `GET` | `/knowledge/stats` | Στατιστικά γνωσιακής βάσης|
-| `DELETE` | `/knowledge/reset` | Εκκαθάριση γνωσιακής βάσης|
-| `POST` | `/retrieval/query` | Σημασιολογική αναζήτηση |
-| `GET` | `/health` | Κατάσταση συστήματος |
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/knowledge/ingest` | Ingest a document into the knowledge base |
+| `POST` | `/knowledge/ingest/batch` | Batch document ingestion |
+| `GET` | `/knowledge/stats` | Knowledge base statistics |
+| `DELETE` | `/knowledge/reset` | Clear knowledge base |
+| `POST` | `/retrieval/query` | Semantic search |
+| `GET` | `/health` | System health status |
 
 ---
 
 ## 🤖 GenAI Logic
 
 ### RAG Pipeline
-Έγγραφα αγοράς ακινήτων εισάγονται μέσω `POST /knowledge/ingest`, κόβονται σε chunks (~200 χαρακτήρες με επικάλυψη(overlap).), μετατρέπονται σε embeddings μέσω OpenAI και αποθηκεύονται στο ChromaDB. Κατά την ερώτηση, το σχετικότερο περιεχόμενο ανακτάται και εγχέεται στο prompt.
+
+Real estate market documents are ingested via `POST /knowledge/ingest`, split into chunks (~200 characters with overlap), converted to embeddings via OpenAI, and stored in ChromaDB. When a question is asked, the most relevant content is retrieved and injected into the prompt.
 
 ### AI Agent (LangGraph)
-Ο agent χρησιμοποιεί LangGraph `StateGraph` με κύκλο `agent → tools → agent` μέχρι την τελική απάντηση. Αποφασίζει μόνος του αν θα χρησιμοποιήσει:
-- `search_knowledge_base` — για ερωτήσεις αγοράς ακινήτων
-- `calculate_mortgage` — για υπολογισμούς δανείου
+
+The agent uses a LangGraph `StateGraph` running an `agent → tools → agent` loop until a final answer is reached. It autonomously decides whether to use:
+
+* `search_knowledge_base` — for real estate market queries
+* `calculate_mortgage` — for loan calculations
 
 ### Fallback
-Αν το Claude Sonnet API αποτύχει, ο agent αυτόματα χρησιμοποιεί GPT-4o Mini.
+
+If the Claude Sonnet API fails, the agent automatically switches to GPT-4o Mini.
 
 ### Conversation Memory
-Κάθε `SearchSession` διατηρεί:
-- `memory` (JSON cache): γρήγορη φόρτωση για τον agent
-- `SearchHistory` (PostgreSQL rows): δόκιμο audit trail ανά turn
+
+Each `SearchSession` maintains:
+
+* `memory` (JSON cache): quick loading for the agent
+* `SearchHistory` (PostgreSQL rows): proper audit trail per turn
 
 ---
 
-## 💬 Παραδείγματα Χρήσης
+## 💬 Usage Examples
 
-### Παράδειγμα 1 — Ερώτηση αγοράς ακινήτων
+### Example 1 — Real Estate Market Query
 
-**Χρήστης:** `"Ποιες είναι οι τιμές ενοικίασης στο Παγκράτι;"`
+**User:** `"What are the rental prices in Pagrati?"`
 
-**Απάντηση Agent:**
+**Agent Response:**
+
 ```
-Σύμφωνα με την Αναφορά Αγοράς Κέντρου Αθήνας 2026, οι τιμές ενοικίασης
-στο Παγκράτι κυμαίνονται μεταξύ 10-12€ ανά τ.μ. για ανακαινισμένα
-διαμερίσματα. Υπάρχει υψηλή ζήτηση για διαμερίσματα 50-60 τ.μ. λόγω
-φοιτητών και βραχυπρόθεσμων μισθώσεων.
+According to the Athens Center Market Report 2026, rental prices
+in Pagrati range between €10-12 per sqm for renovated apartments.
+There is high demand for 50-60 sqm apartments due to students
+and short-term rentals.
 
-[Εργαλείο που χρησιμοποιήθηκε: search_knowledge_base]
-```
+[Tool used: search_knowledge_base]
 
----
-
-### Παράδειγμα 2 — Υπολογισμός στεγαστικού δανείου
-
-**Χρήστης:** `"Θέλω να πάρω δάνειο 200.000€ με επιτόκιο 3.5% για 20 χρόνια. Ποιο θα είναι η μηνιαία δόση;"`
-
-**Απάντηση Agent:**
-```
-Για στεγαστικό δάνειο 200.000€ με επιτόκιο 3.5% και διάρκεια 20 ετών:
-
-• Μηνιαία δόση:        1.159,92 €
-• Συνολικό κόστος:     278.380,80 €
-• Συνολικοί τόκοι:      78.380,80 €
-
-Ανάλυση αποπληρωμής:
-  Έτος 5:   Υπόλοιπο 160.847 € | Πληρωμές: 69.595 €
-  Έτος 10:  Υπόλοιπο 114.472 € | Πληρωμές: 139.190 €
-  Έτος 15:  Υπόλοιπο  59.350 € | Πληρωμές: 208.786 €
-  Έτος 20:  Υπόλοιπο       0 € | Πληρωμές: 278.381 €
-
-[Εργαλείο που χρησιμοποιήθηκε: calculate_mortgage]
 ```
 
 ---
 
-### Παράδειγμα 3 — Συνδυαστική ερώτηση
+### Example 2 — Mortgage Calculation
 
-**Χρήστης:** `"Με ενδιαφέρει ένα σπίτι στα νότια προάστια. Ποιες είναι οι τιμές και αν αγοράσω στα 350.000€ με προκαταβολή 70.000€ και επιτόκιο 4%, ποια θα είναι η μηνιαία δόση μου για 25 χρόνια;"`
+**User:** `"I want to get a loan of €200,000 with a 3.5% interest rate for 20 years. What will the monthly payment be?"`
 
-**Απάντηση Agent:**
+**Agent Response:**
+
 ```
-Τιμές νοτίων προαστίων (Γλυφάδα, Βούλα):
-Οι τιμές πώλησης ξεπερνούν τα 4.500€/τ.μ., καθιστώντας την περιοχή
-από τις ακριβότερες στην Αττική.
+For a mortgage loan of €200,000 with a 3.5% interest rate and a 20-year duration:
 
-Υπολογισμός δανείου για ακίνητο 350.000€:
-• Κεφάλαιο δανείου:    280.000 € (με προκαταβολή 70.000€)
-• Μηνιαίο δόση:        1.476,96 €
-• Συνολικό κόστος:     443.088,00 €
-• Συνολικοί τόκοι:     163.088,00 €
+• Monthly Payment:     €1,159.92
+• Total Cost:          €278,380.80
+• Total Interest:      €78,380.80
 
-[Εργαλεία που χρησιμοποιήθηκαν: search_knowledge_base, calculate_mortgage]
+Repayment Breakdown:
+  Year 5:   Remaining Balance €160,847 | Payments: €69,595
+  Year 10:  Remaining Balance €114,472 | Payments: €139,190
+  Year 15:  Remaining Balance  €59,350 | Payments: €208,786
+  Year 20:  Remaining Balance       €0 | Payments: €278,381
+
+[Tool used: calculate_mortgage]
+
 ```
 
 ---
 
-## 📁 Δομή Project
+### Example 3 — Combined Query
+
+**User:** `"I'm interested in a house in the southern suburbs. What are the prices, and if I buy at €350,000 with a €70,000 down payment and a 4% interest rate, what will my monthly payment be for 25 years?"`
+
+**Agent Response:**
 
 ```
-sra-phase3/
+Southern Suburbs Prices (Glyfada, Voula):
+Sales prices exceed €4,500/sqm, making the area one of the most
+expensive in Attica.
+
+Loan Calculation for a €350,000 property:
+• Loan Capital:        €280,000 (with a €70,000 down payment)
+• Monthly Payment:     €1,476.96
+• Total Cost:          €443,088.00
+• Total Interest:      €163,088.00
+
+[Tools used: search_knowledge_base, calculate_mortgage]
+
+```
+
+---
+
+## 📁 Project Structure
+
+```
+backend/
 ├── app/
 │   ├── main.py                  # FastAPI app factory + Gradio mount
 │   ├── core/
@@ -247,7 +267,7 @@ sra-phase3/
 │   │   └── routers/
 │   │       ├── auth.py, users.py, utils.py, private.py
 │   │       ├── chat.py          # Session-based chat endpoint
-│   │       ├── sessions.py      # CRUD για SearchSession
+│   │       ├── sessions.py      # CRUD for SearchSession
 │   │       ├── health.py, knowledge.py, retrieval.py
 │   │       └── __init__.py      # Aggregation (api_router)
 │   ├── agent/
@@ -260,7 +280,7 @@ sra-phase3/
 │   │   └── retriever_tool.py       # @tool: RAG search
 │   └── ui/
 │       ├── gradio_app.py        # Gradio Blocks UI
-│       └── api_client.py        # HTTP client για το API
+│       └── api_client.py        # HTTP client for the API
 ├── tests/                       # 63 tests (pytest)
 │   ├── conftest.py              # SQLite fixtures
 │   ├── test_auth.py
@@ -273,23 +293,24 @@ sra-phase3/
 ├── requirements.txt
 ├── .env.example
 └── pytest.ini
+
 ```
 
 ---
 
 ## 📄 Documentation
 
-Για πλήρη τεκμηρίωση της αρχιτεκτονικής, των GenAI τεχνικών και των endpoints, δείτε το αρχείο **`Documentation_Smart_Real_Estate_Assistant.docx`** στο repository.
+For full documentation on architecture, GenAI techniques, and endpoints, please refer to the **`Greek_Documentation_Smart_Real_Estate_Assistant.pdf`** file in the repository.
 
 ---
 
-## 🔒 Ασφάλεια
+## 🔒 Security
 
-- Τα API keys και passwords **δεν ανεβαίνουν ποτέ** στο repository (βλ. `.gitignore`)
-- Τα passwords αποθηκεύονται με Argon2 hashing
-- Όλα τα endpoints προστατεύονται με JWT Bearer tokens
-- Τα admin endpoints (knowledge base, health) απαιτούν `is_superuser=True`
-- Τα sessions είναι ιδιωτικά — κάθε χρήστης βλέπει μόνο τα δικά του
+* API keys and passwords **are never uploaded** to the repository (see `.gitignore`)
+* Passwords are saved using Argon2 hashing
+* All endpoints are protected via JWT Bearer tokens
+* Admin endpoints (knowledge base, health) require `is_superuser=True`
+* Sessions are private — users can only view their own records
 
 ---
 
