@@ -1,0 +1,1 @@
+The UI mounted in the FastAPI. Look backend/app/ui
