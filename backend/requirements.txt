@@ -46,6 +46,7 @@ httpx==0.28.1
 huggingface_hub==1.19.0
 idna==3.18
 importlib_resources==7.1.0
+iniconfig==2.3.0
 Jinja2==3.1.6
 jiter==0.15.0
 jsonpatch==1.33
@@ -84,6 +85,7 @@ overrides==7.7.0
 packaging==26.2
 pandas==2.3.3
 pillow==11.3.0
+pluggy==1.6.0
 propcache==0.5.2
 protobuf==6.33.6
 psycopg2-binary==2.9.12
@@ -99,6 +101,9 @@ Pygments==2.20.0
 PyJWT==2.13.0
 PyPika==0.51.1
 pyproject_hooks==1.2.0
+pytest==9.1.1
+pytest-html==4.2.0
+pytest-metadata==3.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-multipart==0.0.32
