@@ -47,7 +47,7 @@ def do_login(email: str, password: str)-> list:
         sessions = api.list_sessions(token)
     except api.APIError as e:
         return(
-            gr.update(value=f"Login failed: {e.details}", visible=True),
+            gr.update(value=f"Login failed: {e.detail}", visible=True),
             None, None, gr.update(visible=True), gr.update(visible=False),
             [], None, [],
         )
@@ -66,7 +66,7 @@ def do_signup(email: str, password: str, full_name: str):
     try:
         api.signup(email, password, full_name)
     except api.APIError as e:
-        return gr.update(value=f"Signup failed: {e.details}", visible=True)
+        return gr.update(value=f"Signup failed: {e.detail}", visible=True)
     
     return gr.update(
         value="Account created! Please switch to the login tab to sign in.", visible=True

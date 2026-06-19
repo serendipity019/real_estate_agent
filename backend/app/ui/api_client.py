@@ -26,7 +26,7 @@ def _raise_for_status(resp: httpx.Response) -> None:
             detail = resp.json().get("detail", resp.text)
         except Exception:
             detail = resp.text
-            raise APIError(resp.status_code, str(detail))
+        raise APIError(resp.status_code, str(detail))
         
 def _auth_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
@@ -51,13 +51,13 @@ def signup(email:str, password: str, full_name: str = "") -> dict:
             f"{BASE_URL}/users/signup",
             json={"email": email, "password": password, "full_name": full_name or None}
         )
-        _raise_for_status(resp=resp)
+        _raise_for_status(resp)
         return resp.json()
     
 def get_current_user(token: str) -> list[dict]:
     with httpx.Client(timeout=TIMEOUT) as client:
         resp = client.get(f"{BASE_URL}/users/me", headers=_auth_headers(token))
-        _raise_for_status(resp=resp)
+        _raise_for_status(resp)
         return resp.json()
     
 #---------------Sessions------------------------------------
