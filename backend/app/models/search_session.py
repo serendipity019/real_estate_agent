@@ -30,6 +30,8 @@ class SearchSession(SearchSessionBase, table=True):
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
 
+    title: str = Field(default="New Conversation")
+
     # Fast-path cache for the agent — JSON-encoded list of {"role", "content"} dicts.
     # Kept in sync with SearchHistory on every turn, capped at settings.MAX_MEMORY_TURNS.
     memory: str = Field(default="[]")
