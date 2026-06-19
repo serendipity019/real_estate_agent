@@ -10,7 +10,7 @@ import uuid
 
 class SearchSessionBase(SQLModel):
     """Base schema: common fields for a search session."""
-    title: str = Field(default="Untitles Search", max_length=255)
+    title: str = Field(default="Untitled Search", max_length=255)
 
 class SearchSessionCreate(SearchSessionBase):
     """API schema: payload for creating a new search session."""
