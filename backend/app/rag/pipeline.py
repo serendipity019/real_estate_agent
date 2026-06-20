@@ -13,8 +13,8 @@ from app.rag.vector_store import VectorStore
 logger = logging.getLogger(__name__)
 
 # ── Chunking constants ──────────────────────────────────────────────────────────
-CHUNK_SIZE = 200        # characters per chunk
-CHUNK_OVERLAP = 40     # overlap between consecutive chunks
+CHUNK_SIZE = 300        # characters per chunk
+CHUNK_OVERLAP = 60     # overlap between consecutive chunks
 
 
 def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
@@ -43,13 +43,20 @@ def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OV
                 end = boundary + 1
 
         chunks.append(text[start:end].strip())
-        start = end - overlap
+        if end >= len(text):
+            # Reached the end of the text — stop, regardless of overlap math.
+            break
+
+        next_start = end - overlap
+        # Guarantee forward progress even if overlap >= chunk produced this round
+        # (otherwise next_start could be <= start, causing an infinite loop).
+        start = next_start if next_start > start else end
 
     return [c for c in chunks if c]
 
 
 class RAGPipeline:
-    """Thin orchestration layer between API routers and VectorStore."""
+    """Lean orchestration layer between API routers and VectorStore."""
 
     def __init__(self, vector_store: VectorStore) -> None:
         self._store = vector_store
