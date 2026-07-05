@@ -86,7 +86,7 @@ def rename_session(token: str, session_id: str, title: str) -> dict:
         _raise_for_status(resp)
         return resp.json()
     
-def delete(token: str, session_id: str) -> None:
+def delete_session(token: str, session_id: str) -> None:
     with httpx.Client(timeout=TIMEOUT) as client:
         resp = client.delete(
             f"{BASE_URL}/sessions/{session_id}",
