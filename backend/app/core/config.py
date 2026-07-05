@@ -94,9 +94,9 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     #  First superuser  ─────────────────────────────────────────────────────────
-    EMAIL_TEST_USER: EmailStr = "super@gmail.com"
-    FIRST_SUPERUSER: EmailStr = "super@gmail.com"
-    FIRST_SUPERUSER_PASSWORD: str = "super147963"
+    EMAIL_TEST_USER: EmailStr 
+    FIRST_SUPERUSER: EmailStr 
+    FIRST_SUPERUSER_PASSWORD: str 
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
