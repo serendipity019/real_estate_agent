@@ -18,16 +18,22 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_tavily_search = None
+
 if settings.TAVILY_API_KEY:
     os.environ["TAVILY_API_KEY"] = settings.TAVILY_API_KEY
 
-_tavily_search = TavilySearch(
-    max_results=3,
-    topic="general",
-    include_answer=True,
-    include_raw_content=False,
-    include_images=False,
-)
+    try:
+        _tavily_search = TavilySearch(
+            max_results=3,
+            topic="general",
+            include_answer=True,
+            include_raw_content=False,
+            include_images=False,
+        )
+    except ImportError:
+        logger.exception("Tavily package not installed")
+
 
 @tool
 def web_search(query: str) -> str:
@@ -58,6 +64,8 @@ def web_search(query: str) -> str:
     Returns:
         Summarized search results with sources.
     """
+    if _tavily_search is None:
+        return "Web search is unavailable."
 
     if not query or not query.strip():
         logger.error("No query provided")
@@ -65,7 +73,7 @@ def web_search(query: str) -> str:
             {"error": "No query provided"},
             ensure_ascii=False,
         )
-    logger.info("Tavily web search: %s", query)
+    logger.info(f"Tavily web search: {query}")
 
     try:
         results: Any = _tavily_search.invoke({"query": query})
