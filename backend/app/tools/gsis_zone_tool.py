@@ -108,7 +108,7 @@ def _query_gsis_zone(lat: float, lon: float) -> list[dict]:
         "f": "json",
         "returnGeometry": "false",
         "spatialRel": "esriSpatialRelIntersects",
-        "geometry": json,
+        "geometry": json.dumps(bbox),
         "geometryType": "esriGeometryEnvelope",
         "inSR": "102100",
         "outFields": "OBJECTID,SE,DESCRIPTIO,CLUSTER_ID",
@@ -207,9 +207,16 @@ def get_objective_zone_price(address: str) -> str:
             "Try later or check manually in the GSIS site: **https://maps.gsis.gr/valuemaps/** "
         )
     
+    if not features:
+        return (
+        f"No objective value zone was found for '{address}'. "
+        "Please verify that the street name, number, and municipality are correct. "
+        "Some newly developed areas or locations may not be covered by the GSIS objective value maps."
+        )
+
     # Format the results
     lines = [
-        f"**Objectivity value / Zone Price** for: {address}",
+        f"**Objective Value / Zone Price** for: {address}",
         f"_(Source: AADE / Ministry of Finance - maps.gsis.gr)_",
         "",
     ]
@@ -226,7 +233,7 @@ def get_objective_zone_price(address: str) -> str:
             lines.append(f"💶 **Zone price:** {price:,}€/sqm.")
             lines.append("")
             lines.append(
-                "**Note:** This is the *objective value* that the state defines as the tax base (ENFIA, transfer loyalty tax)"
+                "**Note:** This is the *objective value* that the state defines as the tax base (ENFIA, transfer tax (φόρος μεταβίβασης))"
                 "The *commercial value* (market price) is usually **higher** ~ for comparison see the market prices"
                 "by region from the Spitogatos index."
             )
