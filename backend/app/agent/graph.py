@@ -24,7 +24,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from typing_extensions import TypedDict
 
-from app.core.config import get_settings
+from app.core.config import settings
 from app.tools import TOOLS
 
 logger = logging.getLogger(__name__)
@@ -40,14 +40,27 @@ You help users with two main tasks:
 
 2. **Mortgage calculations** — compute monthly payments, total costs, and amortisation
    schedules. Use the `calculate_mortgage` tool whenever the user provides a loan amount,
-   interest rate, or asks about affordability.
+   interest rate, or asks about affordability. Format all numbers clearly with the € symbol
+
+3. **Official objective zone price** (`get_objective_zone_price`)
+   Use when the user asks about the objective value (αντικειμενική αξία ), zone price (τιμή ζώνης), ENFIA tax base, or the "government price" for a specific property address.
+   This queries the official GSIS/AADE database directly.
+   IMPORTANT: Always explain that the objective price is the government's tax baseline —
+   it is NOT the market price. Market prices are usually higher.
+
+4. **Real-time web search** (`web_search`)
+   Use for current news, recent law changes (e.g. Golden Visa thresholds, short-term rental
+   rules, ENFIA changes), bank mortgage rates today, or anything that may have changed
+   recently and is not in the knowledge base. Do NOT use this for calculations or for
+   objective zone prices (use the dedicated tools above instead).
 
 Guidelines:
 - Be concise and professional, but friendly.
 - When presenting mortgage results, format numbers clearly with the € symbol.
 - If the knowledge base returns no results, say so honestly and offer general guidance.
-- You may combine both tools in a single response (e.g. "Here are the market prices AND
-  your estimated monthly payment for a property in that area.").
+- You may combine multiple tools in a single response (e.g. market price + objective zone price + mortgage calculation for the same property).
+- When presenting results that combine market price and objective price, always clarify
+  which is which and why they differ.
 - Always respond in the same language the user writes in (Greek or English).
 """
 
@@ -62,21 +75,19 @@ class AgentState(TypedDict):
 # ── Model factory ──────────────────────────────────────────────────────────────
 
 def _build_primary_model():
-    settings = get_settings()
     return ChatAnthropic(
         model=settings.PRIMARY_MODEL,
         api_key=settings.ANTHROPIC_API_KEY,
-        temperature=0.0,
+        temperature=0.1,
         max_tokens=2048,
     ).bind_tools(TOOLS)
 
 
 def _build_fallback_model():
-    settings = get_settings()
     return ChatOpenAI(
         model=settings.FALLBACK_MODEL,
         api_key=settings.OPENAI_API_KEY,
-        temperature=0.0,
+        temperature=0.1,
         max_tokens=2048,
     ).bind_tools(TOOLS)
 
@@ -100,7 +111,7 @@ def agent_node(state: AgentState, config: RunnableConfig) -> dict:
         try:
             response = _build_fallback_model().invoke(messages, config)
         except Exception as fallback_exc:
-            logger.error("Fallback model also failed: %s", fallback_exc)
+            logger.error(f"Fallback model also failed: {fallback_exc}")
             raise fallback_exc
 
     return {"messages": [response]}
