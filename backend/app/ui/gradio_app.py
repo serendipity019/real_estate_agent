@@ -1,9 +1,10 @@
 """
 ui/gradio_app.py — Gradio Blocks UI for the Smart Real Estate Assistant.
 
-Layout:
-  - Logged out: Login / Signup tabs
-  - Logged in: sidebar (session list, new/rename/delete) + chat panel
+Layout(logged-in):
+  - 💬 Chat tab:  sidebar (session list, new/rename/delete) + chat panel
+  - 🛠️ Admin tab: shown only to superusers — KB stats, single ingest,
+    batch ingest from .txt file upload, reset
 
 State is held per-browser-session via gr.State (token, current user, active
 session_id, and the loaded chat history) — never as module-level globals, so
@@ -32,6 +33,27 @@ def _history_to_chatbot(history_rows: list[dict]) -> list[dict]:
         if row.get("result"):
             messages.append({"role": "assistant", "content": row["result"]})
     return messages
+
+def _format_kb_stats(stats: dict) -> str:
+    total = stats.get("total_documents", 0)
+    categories = stats.get("categories", {})
+    sources = stats.get("sources", [])
+
+    cat_lines = "\n".join(
+        f"  • **{cat}**: {count} chunks"
+        for cat, count in sorted(categories.items(), key=lambda x: -x[1])
+    ) or "  _(empty)_"
+
+    src_lines = "\n".join(
+        f"  • {src}" for src in sorted(sources)
+    ) or "  _(no sources)_"
+
+    return (
+        f"### 📊 Knowledge Base Statistics\n\n"
+        f"**Total chunks:** {total}\n\n"
+        f"**By category:**\n{cat_lines}\n\n"
+        f"**Sources ({len(sources)}):**\n{src_lines}"
+    )
 
 #----------------Auth callbacks---------------------------
 def do_login(email: str, password: str)-> list:
@@ -119,7 +141,7 @@ def on_delete_session(token: str, session_id: str):
 
 # ----- Chat callback ---------------------------------
 
-def on_send_message(token: str, session_id, message: str, chat_history: list):
+def on_send_message(token: str, session_id: str, message: str, chat_history: list):
     if not token:
         return chat_history, "", session_id, []
     if not message or not message.strip():
@@ -144,6 +166,76 @@ def on_send_message(token: str, session_id, message: str, chat_history: list):
     sessions = api.list_sessions(token)
 
     return chat_history, "", new_session_id, sessions
+
+# ---- Admin callbacks -------------
+def admin_load_stats(token: str):
+    """Called when the admin tab becomes visible -refresh Knowledge Base stats"""
+    if not token:
+        return "⚠️ Not authenticated."
+    try: 
+        stats = api.get_kb_stats(token)
+        return _format_kb_stats(stats)
+    except api.APIError as e:
+        return f"⚠️ Error loading stats: {e.detail}"
+
+def admin_ingest_single(token: str, content: str, source: str, category: str):
+    """Ingest a single document typed into the text area."""
+    if not token:
+        return "⚠️ Not authenticated."
+    if not content.strip():
+        return "⚠️ Content cannot be empty."
+    if not source.strip():
+        return "⚠️ Source name cannot be empty.", ""
+    try:
+        result = api.ingest_document(token, content.strip(), source.strip(), category.strip())
+        stats = api.get_kb_stats(token)
+        return(
+            f"✅ {result['message']}",
+            _format_kb_stats(stats),
+        )
+    except api.APIError as e:
+        return f"⚠️ Ingest failed: {e.detail}", ""
+    
+def admin_ingest_files(token: str, files):
+    """
+       Batch ingest .txt / .pdf files uploaded via the Gradio File component.
+       Each file becomes one document; source = filename, category = general.
+    """
+    if not token:
+        return "⚠️ Not authenticated.", ""
+    if not files:
+        return "⚠️ No files selected.", ""
+    docs = []
+    skipped = []
+    for file_path in files:
+        try:
+            import pathlib
+            p = pathlib.Path(file_path)
+            text = p.read_text(encoding="utf-8")
+            if not text.strip():
+                skipped.append(p.name)
+                continue
+            docs.append({
+                "content": text,
+                "source": p.name,
+                "category": "general",
+                "metadata": {"origin": "admin_upload"},
+            })
+        except Exception as ex:
+            skipped.append(f"{file_path} ({ex})")
+    if not docs:
+        return "⚠️  All files were empty or unreadable.", ""
+    
+    try:
+        result = api.ingest_batch(token, docs)
+        stats = api.get_kb_stats(token)
+        msg = f"✅  {result['message']}"
+        if skipped:
+            msg += f"\n⚠️ Skipped: {', '.join(skipped)}"
+        return msg, _format_kb_stats(stats)
+    except api.APIError as e:
+        return f"⚠️ Batch ingest failed: {e.detail}", ""
+    
 
 # ------- Build the components of the app------------------------------
 
