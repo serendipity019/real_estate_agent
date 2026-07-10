@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/retrieval", tags=["Retrieval"])
 
 
-@router.post("/query", response_model=QueryResponse, tags=["Query"],  # Admin only
+@router.post("/query", response_model=QueryResponse,  # Admin only
             dependencies=[Depends(required_active_superuser)] )
 def semantic_query(
     req: QueryRequest,
@@ -42,7 +42,7 @@ def semantic_query(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.post("/context", tags=["Context"], 
+@router.post("/context", 
             dependencies=[Depends(required_active_superuser)] ) # Admin only
 def build_context(
     req: QueryRequest,
