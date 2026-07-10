@@ -54,7 +54,7 @@ def ingest_document(
 
 # ── Batch ingest ────────────────────────────────────────────────────────────────
 
-@router.post("/ingest/batch", response_model=IngestResponse, tags=["Ingest"], 
+@router.post("/ingest/batch", response_model=IngestResponse, 
              dependencies=[Depends(required_active_superuser)]) # Admin only
 def ingest_batch(
     docs: list[DocumentIn],
@@ -79,7 +79,7 @@ def ingest_batch(
 
 # ── Stats ────────────────────────────────────────────────────────────────────────
 
-@router.get("/stats", response_model=CollectionStatsResponse, tags=["Stats"], 
+@router.get("/stats", response_model=CollectionStatsResponse, 
             dependencies=[Depends(required_active_superuser)]) # Admin only
 def collection_stats(
     pipeline: RAGPipeline = Depends(get_pipeline),
@@ -94,7 +94,7 @@ def collection_stats(
 
 # ── Reset (dev only) ─────────────────────────────────────────────────────────────
 
-@router.delete("/reset", summary="⚠️ Wipe all documents from the knowledge base", tags=["Reset"], 
+@router.delete("/reset", summary="⚠️ Wipe all documents from the knowledge base", 
                dependencies=[Depends(required_active_superuser)]) # Admin only
 def reset_collection(
     pipeline: RAGPipeline = Depends(get_pipeline),
