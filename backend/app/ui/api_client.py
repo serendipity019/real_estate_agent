@@ -120,3 +120,66 @@ def send_message(token: str, message: str, session_id: str | None = None) -> dic
         )
         _raise_for_status(resp)
         return resp.json()
+    
+# -------- Admin dashboard -----------------------
+def get_kb_stats(token: str) -> dict:
+    """Return knowledge base collection statistics. Admin only."""
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.get(
+            f"{BASE_URL}/knowledge/stats", headers= _auth_headers(token)
+        )
+        _raise_for_status(resp)
+        return resp.json()
+    
+def ingest_document(
+        token: str,
+        content: str,
+        source: str,
+        category: str,
+        metadata: dict | None = None,        
+) -> dict:
+    """Ingest a single text document into the knowledge base. Admin only."""
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{BASE_URL}/knowledge/ingest",
+            json={
+                "content": content,
+                "source": source,
+                "category": category,
+                "metadata": metadata or {},
+            },
+            headers= _auth_headers(token),
+        )
+        _raise_for_status(resp)
+        return resp.json()
+    
+def ingest_batch(token: str, docs: list[dict]) -> dict:
+    """Ingest multiple documents at once. Admin only."""
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{BASE_URL}/knowledge/ingest/batch",
+            json=docs,
+            headers=_auth_headers(token),
+        )
+        _raise_for_status(resp)
+        return resp.json()
+    
+def reset_knowledge_base(token: str) -> dict:
+    """Wipe out and recreate the ChromaDB collection. Admin only."""
+    with httpx.Client(timeout=TIMEOUT) as client: 
+        resp = client.delete(
+            f"{BASE_URL}/knowledge/reset",
+            headers=_auth_headers(token),
+        )
+        _raise_for_status(resp)
+        return resp.json()
+    
+def get_health(token: str) -> dict:
+    """Return system health metrics. Admin only."""
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.get(
+            f"{BASE_URL}/health",
+            headers=_auth_headers(token),
+        )
+        _raise_for_status(resp)
+        return resp.json()
