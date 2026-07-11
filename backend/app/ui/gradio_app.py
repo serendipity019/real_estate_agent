@@ -236,6 +236,21 @@ def admin_ingest_files(token: str, files):
     except api.APIError as e:
         return f"⚠️ Batch ingest failed: {e.detail}", ""
     
+def admin_reset_kb(token: str, confirm_text: str):
+        """
+        Wipe out and recreate the knowledge base.
+        Required from the user to type RESET in the confirmation box."""
+        if not token:
+            return "⚠️ Not authenticated.", "" 
+        if confirm_text.strip().upper() != "RESET":    
+            return "Type RESET in the confirmation box to proceed.", ""
+        try:
+            api.reset_knowledge_base(token)
+            stats = api.get_kb_stats(token)
+            return "✅ Knowledge base wiped out and reset successfully.", _format_kb_stats(stats)
+        except api.APIError as e:
+            return f"⚠️ Reset failed: {e.detail}", ""
+    
 
 # ------- Build the components of the app------------------------------
 
@@ -274,29 +289,100 @@ def build_gradio_app() -> gr.Blocks:
                 welcome_text = gr.Markdown()
                 logout_btn = gr.Button("Log out", scale=0)
 
-            with gr.Row():
-                # Sidebar: session list + management
-                with gr.Column(scale=1):
-                    gr.Markdown("### Your conversations")
-                    new_session_btn = gr.Button("➕ New chat")
-                    session_radio = gr.Radio(
-                        choices=[], label="Sessions", interactive=True
-                    )
-                    rename_title = gr.Textbox(
-                        label="Rename selected session", placeholder="New title…"
-                    )
-                    with gr.Row():
-                        rename_btn = gr.Button("Rename")
-                        delete_btn = gr.Button("Delete", variant="stop")
+            
+            with gr.Tabs() as main_tabs:
 
-                # Main panel: chat
-                with gr.Column(scale=3):
-                    chatbot = gr.Chatbot(label="Chat", type="messages", height=480)
-                    msg_box = gr.Textbox(
-                        label="Message",
-                        placeholder="Ask about Athens property prices or mortgage calculations…",
+            # --- Tab 1: Chat --------------
+                with gr.Tab("💬 chat"):    
+                    with gr.Row():
+                        # Sidebar: session list + management
+                        with gr.Column(scale=1):
+                            gr.Markdown("### Your conversations")
+                            new_session_btn = gr.Button("➕ New chat")
+                            session_radio = gr.Radio(
+                                choices=[], label="Sessions", interactive=True
+                            )
+                            rename_title = gr.Textbox(
+                                label="Rename selected session", placeholder="New title…"
+                            )
+                            with gr.Row():
+                                rename_btn = gr.Button("Rename")
+                                delete_btn = gr.Button("Delete", variant="stop")
+
+                        # Main panel: chat
+                        with gr.Column(scale=3):
+                            chatbot = gr.Chatbot(label="Chat", type="messages", height=480)
+                            msg_box = gr.Textbox(
+                                label="Message",
+                                placeholder="Ask about Athens property prices, "
+                                 "objective zone values or mortgage calculations…",
+                            )
+                            send_btn = gr.Button("Send", variant="primary")
+            
+            # --- Tab 2: Admin Dashboard (Admin only) --------------
+                with gr.Tab("🛠 Admin", visible= False) as admin_tab:
+                    gr.Markdown(
+                        "## Knowledge Base Management\n"
+                        "All changes take effect immediately for all users."
                     )
-                    send_btn = gr.Button("Send", variant="primary")
+
+                    # Stats panel (This is always visible at top of admin tab)
+                    kb_stats_md = gr.Markdown("_LOading..._")
+
+                    gr.Markdown("---")
+
+                    # --- Section A: Single document ingest ------
+                    with gr.Accordion("📄 Ingest single document", open=True):
+                        ingest_content = gr.Textbox(
+                            label="Document content",
+                            placeholder=(
+                                "Paste the full text of the market report,"
+                                "legal document, or neighbourhood data here..."
+                            ),
+                            lines=8,
+                        )
+                        with gr.Row():
+                            ingest_source = gr.Textbox(
+                                label="Source name",
+                                placeholder="e.g spitogatos_q3_2025.txt",
+                                scale=2,
+                            )
+                            ingest_category = gr.Dropdown(
+                                choices=["general", "market_data", "neighborhood", "legal"],
+                                value="Market_data",
+                                label="Category",
+                                scale=1,
+                            )
+                        ingest_single_btn = gr.Button("Ingest document", variant="primary") 
+                        ingest_single_msg = gr.Markdown()
+                    
+                    # --- Section B: Batch ingest from .txt or .pdf files ------
+                    with gr.Accordion("📁 Batch ingest from .txt/.pdf files", open=False):
+                        gr.Markdown(
+                            "Upload one or more `.txt` or `.pdf` files. Each file becomes one document."
+                            "The filename is used as the source name, category defaults to `general` "
+                            "(you can re-ingest with a different category later if needed)."
+                        )
+                        file_upload = gr.File(
+                            label="Upload files",
+                            file_types=[".txt", ".pdf"],
+                            file_count="multiple",
+                        )
+                        ingest_files_btn = gr.Button("Ingest files", variant="primary")
+                        ingest_files_msg = gr.Markdown()
+                    
+                    # ---- Section C: Reset -----------
+                    with gr.Accordion("🗑 Reset knowledge base", open=False):
+                        gr.Markdown(
+                            "⚠️ **This permanently deletes all documents** from the vector store. "
+                            "Type **RESET** in the box below to confirm."
+                        )
+                        reset_confirm = gr.Textbox(
+                            label="Type RESET to confirm",
+                            placeholder="RESET",
+                        )
+                        reset_btn = gr.Button("🗑 Wipe out knowledge base", variant="stop")
+                        reset_msg = gr.Markdown()
 
         # ---- Wiring: Auth ----------------------------------------------------------
         login_btn.click(
@@ -308,13 +394,28 @@ def build_gradio_app() -> gr.Blocks:
                 sessions_state, session_id_state, chatbot,
             ],
         ).then(
-            lambda u: f"Logged in as **{u['email']}**" if u else "",
+            # Welcome message
+            lambda u: (
+                f"Logged in as **{u['email']}**" +
+                (" 🔑 _(admin)_" if u.get("is_superuser") else "")
+            ) if u else "",
             inputs=[user_state],
             outputs=[welcome_text],
         ).then(
+            # Show admin tab only if is_superuser
+            lambda u: gr.update(visible=bool(u and u.get("is_superuser"))),
+            inputs=[user_state],
+            outputs=[admin_tab],
+        ).then(
+            # The session sidebar
             lambda s: gr.update(choices=_session_choices(s)),
             inputs=[sessions_state],
             outputs=[session_radio],
+        ).then(
+            # load KB stats immediatly for admins
+            admin_load_stats,
+            inputs=[token_state],
+            outputs=[kb_stats_md],
         )
 
         signup_btn.click(
@@ -393,6 +494,36 @@ def build_gradio_app() -> gr.Blocks:
             lambda s, sid: gr.update(choices=_session_choices(s), value=sid),
             inputs=[sessions_state, session_id_state],
             outputs=[session_radio],
+        )
+
+        # ---- Wiring: Admin - Single ingest ------
+        ingest_single_btn.click(
+            admin_ingest_single,
+            inputs=[token_state, ingest_content, ingest_source, ingest_category],
+            outputs=[ingest_single_msg, kb_stats_md]
+        ).then(
+            # Clear the text area after successful ingest
+            lambda msg: gr.update(value="") if msg.startwith("✅") else gr.update(),
+            inputs=[ingest_single_msg],
+            outputs=[ingest_content],
+        )
+
+        # ----- Wiring: Admin - File ingest ---------
+        ingest_files_btn.click(
+            admin_ingest_files,
+            inputs=[token_state, file_upload],
+            outputs=[ingest_files_msg, kb_stats_md],
+        )
+
+        # ------ Wiring: Admin - Reset KB ---------
+        reset_btn.click(
+            admin_reset_kb,
+            inputs=[token_state, reset_confirm],
+            outputs=[reset_msg, kb_stats_md],
+        ).then(
+            lambda msg: gr.update(value="") if msg.startwith("✅") else gr.update(),
+            inputs=[reset_msg],
+            outputs=[reset_confirm],
         )
 
     return my_app
