@@ -124,6 +124,14 @@ def _query_gsis_zone(lat: float, lon: float) -> list[dict]:
     )
     proxy_url = GSIS_PROXY + arcgis_url
 
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+        "Accept-Language": "el,en;q=0.9",
+        "Referer": "https://maps.gsis.gr/valuemaps/",
+    }
+
+
     with httpx.Client(timeout=TIMEOUT) as client:
         resp = client.get(proxy_url)
         resp.raise_for_status()
