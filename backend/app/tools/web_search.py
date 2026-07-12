@@ -77,11 +77,23 @@ def web_search(query: str) -> str:
 
     try:
         results: Any = _tavily_search.invoke({"query": query})
-        if not results:
+        if not results or not isinstance(results, dict):
             return f"Do not found results for the: '{query}'"
         
+        answer = results.get("answer", "")
+        results_list = results.get("results", [])
+
+        if not results_list:
+            if answer:
+                return answer
+            return f"No results for: '{query}'"
+        
         lines = [f"**Search results for: ** '{query}'", ""]
-        for i, r in enumerate(results, 1):
+        if answer:
+            lines.append(f"**Summury:** {answer}")
+            lines.append("")
+
+        for i, r in enumerate(results_list, 1):
             url = r.get("url", "")
             content = r.get("content", "").strip()
             if content:
@@ -90,11 +102,7 @@ def web_search(query: str) -> str:
                     lines.append(f"   _Source: {url}_")
                 lines.append("")
 
-        return json.dumps(
-            "\n".join(lines),
-            ensure_ascii=False,
-            default=str,
-        )
+        return "\n".join(lines) if len(lines) > 2 else f"No detailed results for: '{query}'"        
     
     except Exception as exc:
         logger.exception("Tavily search failed.")
