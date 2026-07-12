@@ -73,7 +73,7 @@ class TestGSISTool:
         with pytest.raises(ValueError, match="Δεν βρέθηκε"):
             _geocode_address("Fake Address 999, Atlantis")
 
-    def test_geocode_success_returns_lat_lon(self):
+    def test_geocode_success_returns_lat_lon(self, mock_http):
         from app.tools.gsis_zone_tool import _geocode_address
         mock_resp = mock_http
         mock_resp.json.return_value = [{
@@ -85,7 +85,7 @@ class TestGSISTool:
         assert abs(lat - 37.9748) < 0.001
         assert abs(lon - 23.7717) < 0.001
 
-    def test_full_tool_returns_price_on_success(self):
+    def test_full_tool_returns_price_on_success(self, mock_http):
         """End-to-end mock: geocode → GSIS query → formatted output."""
         geocode_resp = mock_http
         geocode_resp.json.return_value = [{"lat": "37.9748", "lon": "23.7717", "display_name": "Ζωγράφου"}]
@@ -112,7 +112,7 @@ class TestGSISTool:
         assert "ΑΘ0142" in result
         assert "αντικειμενική αξία" in result.lower() or "Αντικειμενική" in result
 
-    def test_full_tool_no_features_returns_guidance(self):
+    def test_full_tool_no_features_returns_guidance(self, mock_http):
         geocode_resp = mock_http
         geocode_resp.json.return_value = [{"lat": "37.9", "lon": "23.7", "display_name": "Test"}]
         gsis_resp = MagicMock(status_code=200)
@@ -127,7 +127,7 @@ class TestGSISTool:
         assert "maps.gsis.gr" in result
         assert "Δεν βρέθηκε" in result
 
-    def test_full_tool_geocode_failure_returns_message(self):
+    def test_full_tool_geocode_failure_returns_message(self, mock_http):
         geocode_resp= mock_http
         geocode_resp.json.return_value = []  # not found
 
