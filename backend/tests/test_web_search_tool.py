@@ -29,12 +29,14 @@ def parse_result():
 class TestTavilyTool:
     """Test suite for the Tavily web search tool."""
 
-    def test_search_returns_formatted_results(self):
+    def test_search_returns_formatted_results(self, mock_tavily, parse_result):
         """Test that web search returns properly formatted results."""
-        mock_tavily.invoke.return_value = [
-            {"url": "https://example.gr/news", "content": "Αύξηση τιμών 10% στην Αθήνα το Q3 2025."},
-            {"url": "https://other.gr/article", "content": "Η Θεσσαλονίκη ανεβαίνει 9,6% σε ετήσια βάση."},
-        ]
+        mock_tavily.invoke.return_value = {
+            "results": [
+                {"url": "https://example.gr/news", "content": "Αύξηση τιμών 10% στην Αθήνα το Q3 2025."},
+                {"url": "https://other.gr/article", "content": "Η Θεσσαλονίκη ανεβαίνει 9,6% σε ετήσια βάση."},
+            ]
+        }
 
         result = web_search.invoke({"query": "τιμές ακινήτων Αθήνα 2025"})
         parsed_result = parse_result(result)
@@ -45,20 +47,20 @@ class TestTavilyTool:
 
     def test_search_no_api_key_returns_graceful_message(self):
         """Test that missing API key returns appropriate message."""
-        result = web_search.invoke({"query": "anything"})
+        with patch("app.tools.web_search._tavily_search", None):
+            result = web_search.invoke({"query": "anything"})
+            assert result == "Web search is unavailable."
 
-        assert result == "Web search is unavailable."
-
-    def test_search_empty_results_returns_message(self):
+    def test_search_empty_results_returns_message(self, mock_tavily, parse_result):
         """Test handling of empty search results."""
-        mock_tavily.invoke.return_value = []
+        mock_tavily.invoke.return_value = {"results": []}
 
         result = web_search.invoke({"query": "very obscure query"})
+        parsed_result = parse_result(result)
 
-        assert "Do not found results" in result
-        assert "very obscure query" in result
+        assert "No results for: 'very obscure query'" in parsed_result
 
-    def test_search_api_exception_returns_graceful_message(self):
+    def test_search_api_exception_returns_graceful_message(self, mock_tavily, parse_result):
         """Test handling of API exceptions."""
         mock_tavily.invoke.side_effect = RuntimeError("API timeout")
 
@@ -70,7 +72,7 @@ class TestTavilyTool:
         assert "Tavily search failed" in parsed_result["error"]
         assert "API timeout" in parsed_result["details"]
 
-    def test_empty_query_returns_error(self):
+    def test_empty_query_returns_error(self, parse_result):
         """Test that empty query returns appropriate error."""
         
         result = web_search.invoke({"query": ""})
@@ -81,7 +83,7 @@ class TestTavilyTool:
         assert "error" in parsed_result
         assert parsed_result["error"] == "No query provided"
 
-    def test_whitespace_query_returns_error(self):
+    def test_whitespace_query_returns_error(self, parse_result):
         """Test that whitespace-only query returns appropriate error."""
         
         result = web_search.invoke({"query": "   "})
