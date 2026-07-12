@@ -61,7 +61,8 @@ def do_login(email: str, password: str)-> list:
         return(
             gr.update(value="Please enter both email and password.", visible=True),
             None, None, gr.update(visible=True), gr.update(visible=False),
-            [], None, [],
+            [], None, [], "", gr.update(visible=False), gr.update(choices=[]),
+            "_Not authenticated._"
         )
     try:
         token = api.login(email, password)
@@ -71,14 +72,19 @@ def do_login(email: str, password: str)-> list:
         return(
             gr.update(value=f"Login failed: {e.detail}", visible=True),
             None, None, gr.update(visible=True), gr.update(visible=False),
-            [], None, [],
+            [], None, [], "", gr.update(visible=False), gr.update(choices=[]),
+            "_Not authenticated._"
         )
     
+    is_admin = user.get("is_superuser", False)
+    welcome = f"Logged in as **{user['email']}**" + (" 🔑 _(admin)_" if is_admin else "")
     return(
         gr.update(value="", visible=False),
         token, user,
         gr.update(visible=False), gr.update(visible=True),
-        sessions, None, []
+        sessions, None, [], welcome, gr.update(visible=is_admin), 
+        gr.update(choices=_session_choices(sessions)),
+        _format_kb_stats(api.get_kb_stats(token)) if is_admin else "_Not authenticaed._",
     )
 
 def do_signup(email: str, password: str, full_name: str):
@@ -177,13 +183,23 @@ def admin_load_stats(token: str):
         return _format_kb_stats(stats)
     except api.APIError as e:
         return f"⚠️ Error loading stats: {e.detail}"
+    
+def on_admin_tab_selected(token: str):
+    """Called when admin tab is selected."""
+    if not token:
+        return "⚠️ Not authenticated."
+    try:
+        stats = api.get_kb_stats(token)
+        return _format_kb_stats(stats)
+    except api.APIError as e:
+        return f"⚠️ Error loading stats: {e.detail}."
 
 def admin_ingest_single(token: str, content: str, source: str, category: str):
     """Ingest a single document typed into the text area."""
     if not token:
-        return "⚠️ Not authenticated."
+        return "⚠️ Not authenticated.", ""
     if not content.strip():
-        return "⚠️ Content cannot be empty."
+        return "⚠️ Content cannot be empty.", ""
     if not source.strip():
         return "⚠️ Source name cannot be empty.", ""
     try:
@@ -243,7 +259,7 @@ def admin_reset_kb(token: str, confirm_text: str):
         if not token:
             return "⚠️ Not authenticated.", "" 
         if confirm_text.strip().upper() != "RESET":    
-            return "Type RESET in the confirmation box to proceed.", ""
+            return "⚠️ Type RESET in the confirmation box to proceed.", ""
         try:
             api.reset_knowledge_base(token)
             stats = api.get_kb_stats(token)
@@ -290,7 +306,7 @@ def build_gradio_app() -> gr.Blocks:
                 logout_btn = gr.Button("Log out", scale=0)
 
             
-            with gr.Tabs() as main_tabs:
+            with gr.Tabs(selected=0) as main_tabs:
 
             # --- Tab 1: Chat --------------
                 with gr.Tab("💬 chat"):    
@@ -327,7 +343,7 @@ def build_gradio_app() -> gr.Blocks:
                     )
 
                     # Stats panel (This is always visible at top of admin tab)
-                    kb_stats_md = gr.Markdown("_LOading..._")
+                    kb_stats_md = gr.Markdown("_Loading..._")
 
                     gr.Markdown("---")
 
@@ -392,30 +408,8 @@ def build_gradio_app() -> gr.Blocks:
                 login_error, token_state, user_state,
                 logged_out_view, logged_in_view,
                 sessions_state, session_id_state, chatbot,
+                welcome_text, admin_tab, session_radio, kb_stats_md,
             ],
-        ).then(
-            # Welcome message
-            lambda u: (
-                f"Logged in as **{u['email']}**" +
-                (" 🔑 _(admin)_" if u.get("is_superuser") else "")
-            ) if u else "",
-            inputs=[user_state],
-            outputs=[welcome_text],
-        ).then(
-            # Show admin tab only if is_superuser
-            lambda u: gr.update(visible=bool(u and u.get("is_superuser"))),
-            inputs=[user_state],
-            outputs=[admin_tab],
-        ).then(
-            # The session sidebar
-            lambda s: gr.update(choices=_session_choices(s)),
-            inputs=[sessions_state],
-            outputs=[session_radio],
-        ).then(
-            # load KB stats immediatly for admins
-            admin_load_stats,
-            inputs=[token_state],
-            outputs=[kb_stats_md],
         )
 
         signup_btn.click(
@@ -503,12 +497,18 @@ def build_gradio_app() -> gr.Blocks:
             outputs=[ingest_single_msg, kb_stats_md]
         ).then(
             # Clear the text area after successful ingest
-            lambda msg: gr.update(value="") if msg.startwith("✅") else gr.update(),
+            lambda msg: gr.update(value="") if msg.startswith("✅") else gr.update(),
             inputs=[ingest_single_msg],
             outputs=[ingest_content],
         )
 
         # ----- Wiring: Admin - File ingest ---------
+        admin_tab.select(
+            on_admin_tab_selected,
+            inputs=[token_state],
+            outputs=[kb_stats_md]
+        )
+
         ingest_files_btn.click(
             admin_ingest_files,
             inputs=[token_state, file_upload],
@@ -521,7 +521,7 @@ def build_gradio_app() -> gr.Blocks:
             inputs=[token_state, reset_confirm],
             outputs=[reset_msg, kb_stats_md],
         ).then(
-            lambda msg: gr.update(value="") if msg.startwith("✅") else gr.update(),
+            lambda msg: gr.update(value="") if msg.startswith("✅") else gr.update(),
             inputs=[reset_msg],
             outputs=[reset_confirm],
         )
