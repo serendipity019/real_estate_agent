@@ -23,6 +23,10 @@ def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OV
     Respects sentence boundaries where possible.
     """
     text = re.sub(r"\s+", " ", text).strip()
+    
+    if not text:
+        return []
+
     if len(text) <= chunk_size:
         return [text]
 
