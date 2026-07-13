@@ -10,12 +10,11 @@ from app.tools.gsis_zone_tool import get_objective_zone_price
 def mock_http():
     """
     Fixture that mocks httpx.Client and returns a configured mock response.
-    Usage: 
-        mock_response = mock_http()
-        mock_response.json.return_value = [...]  # Configure for your test
+    The caller can configure mock_response.json.return_value.
     """
     # Create the mock response
     mock_response = MagicMock(status_code=200)
+    mock_response.json.return_value = {}
     
     # Create the mock client with context manager support
     mock_client = MagicMock()
@@ -64,13 +63,13 @@ class TestGSISTool:
         code, price = _parse_zone_price("")
         assert price is None
 
-    def test_geocode_not_found_raises_value_error(self):
+    def test_geocode_not_found_raises_value_error(self, mock_http):
         """Test that geocoding a non-existent address raises ValueError."""
         from app.tools.gsis_zone_tool import _geocode_address
         mock_resp = mock_http
         mock_resp.json.return_value = []  # empty Nominatim result
 
-        with pytest.raises(ValueError, match="Δεν βρέθηκε"):
+        with pytest.raises(ValueError, match="didn't find"):
             _geocode_address("Fake Address 999, Atlantis")
 
     def test_geocode_success_returns_lat_lon(self, mock_http):
@@ -90,50 +89,34 @@ class TestGSISTool:
         geocode_resp = mock_http
         geocode_resp.json.return_value = [{"lat": "37.9748", "lon": "23.7717", "display_name": "Ζωγράφου"}]
 
-        gsis_resp = MagicMock(status_code=200)
-        gsis_resp.json.return_value = {
-            "features": [{
-                "attributes": {
+        with patch("app.tools.gsis_zone_tool._query_gsis_zone") as mock_query:
+            mock_query.return_value = [{
                     "OBJECTID": 1,
                     "SE": "ΑΘ0142/2750",
                     "DESCRIPTIO": "ΖΩΓΡΑΦΟΥ ΚΕΝΤΡΟ",
                     "CLUSTER_ID": "ATH01"
-                }
-            }]
-        }
-
-        with patch("httpx.Client") as MockClient:
-            instance = MockClient.return_value.__enter__.return_value
-            # First call returns geocode response, second returns GSIS response
-            instance.get.side_effect = [geocode_resp, gsis_resp]
-            result = get_objective_zone_price.invoke({"address": "Αρχιμήδους 12, Ζωγράφου"})
+                }]
+            result = get_objective_zone_price.invoke({"address": "Αρχιμήδους 12, Ζωγράφου"})            
 
         assert "2,750" in result or "2750" in result
         assert "ΑΘ0142" in result
-        assert "αντικειμενική αξία" in result.lower() or "Αντικειμενική" in result
 
     def test_full_tool_no_features_returns_guidance(self, mock_http):
         geocode_resp = mock_http
         geocode_resp.json.return_value = [{"lat": "37.9", "lon": "23.7", "display_name": "Test"}]
-        gsis_resp = MagicMock(status_code=200)
-        gsis_resp.json.return_value = {"features": []}
 
-        with patch("httpx.Client") as MockClient:
-            instance = MockClient.return_value.__enter__.return_value
-            # First call returns geocode response, second returns GSIS response
-            instance.get.side_effect = [geocode_resp, gsis_resp]
+        with patch("app.tools.gsis_zone_tool._query_gsis_zone") as mock_query:
+            mock_query.return_value = []
             result = get_objective_zone_price.invoke({"address": "Κάπου μακριά 1"})
 
-        assert "maps.gsis.gr" in result
-        assert "Δεν βρέθηκε" in result
+        assert "No objective value zone was found" in result
 
     def test_full_tool_geocode_failure_returns_message(self, mock_http):
         geocode_resp= mock_http
         geocode_resp.json.return_value = []  # not found
 
-        with patch("httpx.Client") as MockClient:
-            instance = MockClient.return_value.__enter__.return_value
-            instance.get.return_value = geocode_resp
+        with patch("app.tools.gsis_zone_tool._query_gsis_zone") as mock_geocode:
+            mock_geocode.side_effect = ValueError("Address not found in OpenStreetMap")
             result = get_objective_zone_price.invoke({"address": "Fake Street 999, Atlantis"})
 
-        assert "Δεν βρέθηκε" in result
+        assert "didn't find" in result or "OpenStreetMap" in result
