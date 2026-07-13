@@ -74,7 +74,7 @@ def create_app() -> FastAPI:
             "Combines RAG-powered market insights with mortgage calculations, "
             "behind authenticated, session-based chat."
         ),
-        version="0.1.4",
+        version="0.2.0",
         lifespan=lifespan,
     )
 
