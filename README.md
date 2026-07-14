@@ -1,20 +1,30 @@
+Here is the translation of your document into English:
+
 # 🏠 Smart Real Estate Assistant
 
 **Smart Real Estate Assistant for the Greek Market**
 
-A comprehensive Generative AI application that combines real estate market analysis with mortgage calculations via natural language. It is powered by a FastAPI backend, LangGraph agentic AI, RAG with ChromaDB, and a Gradio UI.
+---
+
+## 💡 Why I Built This App
+
+The Greek real estate market is one of the most opaque in Europe. Anyone looking to buy, sell, or simply understand the value of a property is faced with a chaos of information: market prices on listing sites, objective values on government maps, bank interest rates in PDFs, Golden Visa legislation in Government Gazettes (ΦΕΚ), and price indices from the Bank of Greece — all scattered across different sources, in different formats, without a single point of reference.
+
+The goal of this application is to solve exactly this problem: to create a **unified digital advisor** that combines all these sources and answers natural language questions — whether you are a buyer wanting to know what an apartment in Pagkrati is worth, an investor calculating loan payments, or a foreigner looking for what changes in the Golden Visa program.
+
+The application is not just a simple chatbot. It is an **Agentic AI** that decides on its own which tools to use for each question — searching the knowledge base, making calculations, querying official government sources, and searching the web for current developments.
 
 ---
 
 ## 📋 Description
 
-Users can ask questions in Greek or English, such as:
+Users can ask questions in Greek or English:
 
 * *"What are the property prices in Kolonaki?"*
-* *"Calculate my monthly payment for a €200,000 loan with a 3.5% interest rate for 20 years."*
-* *"How much does a house cost in Glyfada and what would my monthly payment be?"*
-
-The system automatically decides which tool to use (RAG search or mortgage calculator) and returns a structured response.
+* *"Calculate my monthly payment for a loan of €200,000, 3.5%, 20 years"*
+* *"What is the objective value for an address in, for example, Zografou?"*
+* *"What changes were recently made to the Golden Visa?"*
+* *"I have a 57 sq.m. apartment in Pagkrati, 2nd floor — how much can I sell it for?"*
 
 ---
 
@@ -30,60 +40,35 @@ The system automatically decides which tool to use (RAG search or mortgage calcu
 | Vector Store | ChromaDB (persistent) |
 | Database | PostgreSQL + SQLModel |
 | Authentication | JWT (OAuth2) + Argon2 |
-| UI | Gradio 5, mounted on FastAPI |
+| UI | Gradio 5/6, mounted on FastAPI |
 
 ---
 
 ## ⚙️ Installation
 
-### Prerequisites
-
-* Python 3.12+
-* PostgreSQL 14+
-* Node.js 18+ (only for docx generation scripts)
-
-### Steps
-
 ```bash
-# 1. Clone the repository
-git clone git@github.com:serendipity019/real_estate_agent.git
-cd real_estate_agent
-
-# 2. Create a virtual environment
-python -m venv .venv
-source .venv/bin/activate      # Linux/Mac
-.venv\Scripts\activate         # Windows
-
-# 3. Install required libraries
+git clone https://github.com/<your-username>/smart-real-estate-assistant.git
+cd smart-real-estate-assistant
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# 4. Copy and fill in environment variables
-cp .env.example .env
-# Open .env and insert your API keys and PostgreSQL credentials
-
-# 5. Create database (via Alembic or directly)
-# Alternatively, the app creates the superuser automatically upon startup
+cp .env.example .env   # fill in API keys and DB credentials
 
 ```
 
 ### Environment Variables (.env)
 
 ```env
-# AI Keys
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
+TAVILY_API_KEY=tvly-...
 
-# PostgreSQL
 POSTGRES_SERVER=localhost
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 POSTGRES_DB=smart_real_estate
 
-# Superuser (created automatically)
 FIRST_SUPERUSER=admin@example.com
 FIRST_SUPERUSER_PASSWORD=your_secure_password
-
-# Security
 SECRET_KEY=your_secret_key_here
 
 ```
@@ -92,22 +77,24 @@ SECRET_KEY=your_secret_key_here
 
 ## 🚀 Execution
 
-### Backend
-
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```
 
-The API is available at: `http://localhost:8000`
+* API + Swagger: `http://localhost:8000/docs`
+* Gradio UI: `http://localhost:8000/ui`
 
-Swagger UI: `http://localhost:8000/docs`
+The UI is mounted directly on FastAPI — no separate execution is needed.
 
-### UI (Gradio)
+### Importing data into the knowledge base
 
-The UI is mounted directly onto FastAPI — **no separate execution is required**.
+```bash
+python scripts/ingest_sample_data.py \
+  --email admin@example.com \
+  --password your_password
 
-Open your browser at: **`http://localhost:8000/ui`**
+```
 
 ### Tests
 
@@ -124,123 +111,95 @@ pytest tests/ -v
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/login/access-token` | Login, returns JWT token |
-| `POST` | `/users/signup` | New user registration |
+| `POST` | `/login/access-token` | Login, JWT token |
+| `POST` | `/users/signup` | User registration |
 | `POST` | `/reset-password/` | Password reset |
 
 ### Chat & Sessions
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/chat` | Send message to the AI agent |
-| `POST` | `/sessions/` | Create a new chat session |
-| `GET` | `/sessions/` | List user chat sessions |
-| `GET` | `/sessions/{id}/history` | Chat session history |
-| `PATCH` | `/sessions/{id}` | Rename chat session |
-| `DELETE` | `/sessions/{id}` | Delete chat session |
+| `POST` | `/chat` | Send message to the agent |
+| `POST` | `/sessions/` | New conversation |
+| `GET` | `/sessions/` | Conversation list |
+| `GET` | `/sessions/{id}/history` | Conversation history |
+| `PATCH` | `/sessions/{id}` | Rename |
+| `DELETE` | `/sessions/{id}` | Delete |
 
-### Knowledge Base (Admin only)
+### Knowledge Base & Admin (Superuser only)
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/knowledge/ingest` | Ingest a document into the knowledge base |
-| `POST` | `/knowledge/ingest/batch` | Batch document ingestion |
-| `GET` | `/knowledge/stats` | Knowledge base statistics |
-| `DELETE` | `/knowledge/reset` | Clear knowledge base |
-| `POST` | `/retrieval/query` | Semantic search |
-| `GET` | `/health` | System health status |
+| `POST` | `/knowledge/ingest` | Document ingestion |
+| `POST` | `/knowledge/ingest/batch` | Batch ingestion |
+| `GET` | `/knowledge/stats` | KB statistics |
+| `DELETE` | `/knowledge/reset` | Reset KB |
+| `GET` | `/health` | System health |
 
 ---
 
-## 🤖 GenAI Logic
+## 🤖 AI Agent — 4 Tools
 
-### RAG Pipeline
+| Tool | Usage |
+| --- | --- |
+| `search_knowledge_base` | Prices by area, rents, legal framework from ChromaDB |
+| `calculate_mortgage` | Monthly payment, interest, amortization schedule |
+| `get_objective_zone_price` | Objective value from GSIS/IAPR ArcGIS |
+| `search_real_estate_news` | Real-time news search via Tavily |
 
-Real estate market documents are ingested via `POST /knowledge/ingest`, split into chunks (~200 characters with overlap), converted to embeddings via OpenAI, and stored in ChromaDB. When a question is asked, the most relevant content is retrieved and injected into the prompt.
+> ⚠️ **Limitation of `get_objective_zone_price`:** The GSIS API returns HTTP 403 on automated requests (likely requires a browser session token). The agent detects this failure and redirects the user to [maps.gsis.gr/valuemaps](https://maps.gsis.gr/valuemaps/) for manual search.
 
-### AI Agent (LangGraph)
+---
 
-The agent uses a LangGraph `StateGraph` running an `agent → tools → agent` loop until a final answer is reached. It autonomously decides whether to use:
+## 🖥️ User Interface
 
-* `search_knowledge_base` — for real estate market queries
-* `calculate_mortgage` — for loan calculations
+### Chat Tab (all users)
 
-### Fallback
+Session sidebar (create/select/rename/delete) + chat panel with server-side conversation memory.
 
-If the Claude Sonnet API fails, the agent automatically switches to GPT-4o Mini.
+### Admin Tab (superuser only)
 
-### Conversation Memory
+Appears automatically if `is_superuser=True`:
 
-Each `SearchSession` maintains:
-
-* `memory` (JSON cache): quick loading for the agent
-* `SearchHistory` (PostgreSQL rows): proper audit trail per turn
+* KB Stats: chunks, categories, sources
+* Single ingest: text area + source + category dropdown
+* Batch file upload: .txt files → documents
+* Reset: with "RESET" confirmation
 
 ---
 
 ## 💬 Usage Examples
 
-### Example 1 — Real Estate Market Query
+### Property Valuation
 
-**User:** `"What are the rental prices in Pagrati?"`
-
-**Agent Response:**
+**User:** `"I have a 57 sq.m. apartment in Pagkrati, 2nd floor. How much can I sell it for?"`
 
 ```
-According to the Athens Center Market Report 2026, rental prices
-in Pagrati range between €10-12 per sqm for renovated apartments.
-There is high demand for 50-60 sqm apartments due to students
-and short-term rentals.
-
-[Tool used: search_knowledge_base]
+Average price Pagkrati: €2,900/sq.m. (Spitogatos Q3 2025)
+Estimated value of 57sq.m.: ~€165,300
+Realistic range: €145,000 – €185,000
+(±15% depending on renovation, elevator, energy class)
 
 ```
 
----
+### Loan Calculation
 
-### Example 2 — Mortgage Calculation
-
-**User:** `"I want to get a loan of €200,000 with a 3.5% interest rate for 20 years. What will the monthly payment be?"`
-
-**Agent Response:**
+**User:** `"Loan of €200,000, 3.5%, 20 years"`
 
 ```
-For a mortgage loan of €200,000 with a 3.5% interest rate and a 20-year duration:
-
-• Monthly Payment:     €1,159.92
-• Total Cost:          €278,380.80
-• Total Interest:      €78,380.80
-
-Repayment Breakdown:
-  Year 5:   Remaining Balance €160,847 | Payments: €69,595
-  Year 10:  Remaining Balance €114,472 | Payments: €139,190
-  Year 15:  Remaining Balance  €59,350 | Payments: €208,786
-  Year 20:  Remaining Balance       €0 | Payments: €278,381
-
-[Tool used: calculate_mortgage]
+Monthly payment:  €1,159.92
+Total cost:       €278,380.80
+Total interest:   €78,380.80
 
 ```
 
----
+### Combined Question
 
-### Example 3 — Combined Query
-
-**User:** `"I'm interested in a house in the southern suburbs. What are the prices, and if I buy at €350,000 with a €70,000 down payment and a 4% interest rate, what will my monthly payment be for 25 years?"`
-
-**Agent Response:**
+**User:** `"Prices in Glyfada + mortgage loan of €350,000 with a €70,000 down payment, 4%, 25 years"`
 
 ```
-Southern Suburbs Prices (Glyfada, Voula):
-Sales prices exceed €4,500/sqm, making the area one of the most
-expensive in Attica.
-
-Loan Calculation for a €350,000 property:
-• Loan Capital:        €280,000 (with a €70,000 down payment)
-• Monthly Payment:     €1,476.96
-• Total Cost:          €443,088.00
-• Total Interest:      €163,088.00
-
-[Tools used: search_knowledge_base, calculate_mortgage]
+Glyfada: average price €4,091/sq.m. (+7.15% YoY)
+Loan of €280,000: monthly payment €1,476.96
 
 ```
 
@@ -249,47 +208,26 @@ Loan Calculation for a €350,000 property:
 ## 📁 Project Structure
 
 ```
-backend/
+sra-phase3/
 ├── app/
-│   ├── main.py                  # FastAPI app factory + Gradio mount
-│   ├── core/
-│   │   ├── config.py            # Pydantic Settings (.env)
-│   │   ├── db.py                # SQLModel engine + init_db
-│   │   └── security.py          # JWT + Argon2 password hashing
-│   ├── models/                  # SQLModel table=True (DB tables)
-│   │   ├── user.py
-│   │   ├── search_session.py
-│   │   └── history.py
-│   ├── schemas/                 # Pydantic DTOs (request/response)
-│   │   ├── user.py, chat.py, rag_schemas.py, ...
-│   ├── api/
-│   │   ├── depedencies.py       # SessionDep, CurrentUser, superuser gate
-│   │   └── routers/
-│   │       ├── auth.py, users.py, utils.py, private.py
-│   │       ├── chat.py          # Session-based chat endpoint
-│   │       ├── sessions.py      # CRUD for SearchSession
-│   │       ├── health.py, knowledge.py, retrieval.py
-│   │       └── __init__.py      # Aggregation (api_router)
-│   ├── agent/
-│   │   └── graph.py             # LangGraph StateGraph
-│   ├── rag/
-│   │   ├── vector_store.py      # ChromaDB wrapper
-│   │   └── pipeline.py          # Chunking, ingest, retrieve
+│   ├── main.py                    # FastAPI app + Gradio mount
+│   ├── core/                      # config, db, security
+│   ├── models/                    # User, SearchSession, SearchHistory
+│   ├── schemas/                   # Pydantic DTOs
+│   ├── api/routers/               # auth, users, chat, sessions, knowledge...
+│   ├── agent/graph.py             # LangGraph StateGraph
+│   ├── rag/                       # ChromaDB vector store + pipeline
 │   ├── tools/
-│   │   ├── mortgage_calculator.py  # @tool: annuity formula
-│   │   └── retriever_tool.py       # @tool: RAG search
+│   │   ├── mortgage_calculator.py # @tool: annuity formula
+│   │   ├── retriever.py           # @tool: RAG search
+│   │   ├── gsis_zone_tool.py      # @tool: GSIS objective values
+│   │   └── web_search.py          # @tool: Tavily real-time search
 │   └── ui/
-│       ├── gradio_app.py        # Gradio Blocks UI
-│       └── api_client.py        # HTTP client for the API
-├── tests/                       # 63 tests (pytest)
-│   ├── conftest.py              # SQLite fixtures
-│   ├── test_auth.py
-│   ├── test_sessions.py
-│   ├── test_chat.py
-│   ├── test_admin_rag_endpoints.py
-│   ├── test_mortgage_calculator.py
-│   └── test_ui.py
-├── data/chroma_db/              # ChromaDB persistent store
+│       ├── gradio_app.py          # Chat + Admin dashboard
+│       └── api_client.py          # HTTP client for the API
+├── data/sample_knowledge_base/    # 5 ready-to-use .txt data files
+├── scripts/ingest_sample_data.py  # Helper script to functionally import data into the Knowledge Base.
+├── tests/                         # 100+ pytest tests
 ├── requirements.txt
 ├── .env.example
 └── pytest.ini
@@ -300,18 +238,18 @@ backend/
 
 ## 📄 Documentation
 
-Για πλήρη τεκμηρίωση της αρχιτεκτονικής, των GenAI τεχνικών και των endpoints, δείτε το αρχείο **[Greek Documentation Smart Real Estate Assistant (PDF)](docs/Greek_Documentation_Smart_Real_Estate_Assistant.pdf)** στο repository.
+For full documentation of the architecture, GenAI techniques, and endpoints, see the file **[Greek Documentation Smart Real Estate Assistant (PDF)](https://www.google.com/search?q=docs/Greek_Documentation_Smart_Real_Estate_Assistant.pdf)** in the repository.
 
 ---
 
 ## 🔒 Security
 
 * API keys and passwords **are never uploaded** to the repository (see `.gitignore`)
-* Passwords are saved using Argon2 hashing
-* All endpoints are protected via JWT Bearer tokens
+* Passwords are stored using Argon2 hashing
+* All endpoints are protected with JWT Bearer tokens
 * Admin endpoints (knowledge base, health) require `is_superuser=True`
-* Sessions are private — users can only view their own records
+* Sessions are private — each user can only see their own
 
 ---
 
-*Athens University of Economics and Business — AI for Developers Bootcamp. PAPAPANAGIOUTOU PANAGIOTIS*
+*Athens University of Economics and Business — AI for Developers Bootcamp*
