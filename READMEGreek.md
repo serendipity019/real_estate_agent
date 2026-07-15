@@ -45,8 +45,8 @@
 ## ⚙️ Εγκατάσταση
 
 ```bash
-git clone https://github.com/<your-username>/smart-real-estate-assistant.git
-cd smart-real-estate-assistant
+git clone git@github.com:serendipity019/real_estate_agent.git
+cd real_estate_agent
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # συμπλήρωσε API keys και DB credentials

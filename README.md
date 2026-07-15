@@ -47,8 +47,8 @@ Users can ask questions in Greek or English:
 ## ⚙️ Installation
 
 ```bash
-git clone https://github.com/<your-username>/smart-real-estate-assistant.git
-cd smart-real-estate-assistant
+git git@github.com:serendipity019/real_estate_agent.git
+cd real_estate_agent
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # fill in API keys and DB credentials
