@@ -76,7 +76,7 @@ SECRET_KEY=your_secret_key_here
 ---
 
 ## 🚀 Execution
-
+While are you in backend folder:
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
@@ -251,5 +251,5 @@ For full documentation of the architecture, GenAI techniques, and endpoints, see
 * Sessions are private — each user can only see their own
 
 ---
-
+'Papapanagiotou Panagiotis'
 *Athens University of Economics and Business — AI for Developers Bootcamp*

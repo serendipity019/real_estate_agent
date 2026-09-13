@@ -72,7 +72,7 @@ SECRET_KEY=your_secret_key_here
 ---
 
 ## 🚀 Εκτέλεση
-
+While are you in backend folder:
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -235,4 +235,5 @@ sra-phase3/
 
 ---
 
+'Papapanagiotou Panagiotis'
 *Athens University of Economics and Business — AI for Developers Bootcamp*
