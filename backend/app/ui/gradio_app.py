@@ -216,27 +216,36 @@ def admin_ingest_files(token: str, files):
     """
        Batch ingest .txt / .pdf files uploaded via the Gradio File component.
        Each file becomes one document; source = filename, category = general.
+       PDF text is extracted automatically using pdfplumber.
     """
     if not token:
         return "⚠️ Not authenticated.", ""
     if not files:
         return "⚠️ No files selected.", ""
+
+    from app.rag.pdf_extractor import extract_text_from_file, PDFExtractionError
+
     docs = []
     skipped = []
     for file_path in files:
         try:
             import pathlib
             p = pathlib.Path(file_path)
-            text = p.read_text(encoding="utf-8")
+            text = extract_text_from_file(p)
             if not text.strip():
-                skipped.append(p.name)
+                skipped.append(f"{p.name} (empty after extraction)")
                 continue
             docs.append({
                 "content": text,
                 "source": p.name,
                 "category": "general",
-                "metadata": {"origin": "admin_upload"},
+                "metadata": {
+                    "origin": "admin_upload",
+                    "file_type": p.suffix.lower().lstrip("."),
+                    },
             })
+        except PDFExtractionError as ex:
+            skipped.append(f"{file_path}: {ex}") 
         except Exception as ex:
             skipped.append(f"{file_path} ({ex})")
     if not docs:
@@ -271,7 +280,8 @@ def admin_reset_kb(token: str, confirm_text: str):
 # ------- Build the components of the app------------------------------
 
 def build_gradio_app() -> gr.Blocks:
-    with gr.Blocks(title="Smart Real Estate Assistant") as my_app:
+    head = '<link rel="icon" type="image/x-icon" href="/ui/favicon.ico">'
+    with gr.Blocks(title="Smart Real Estate Assistant", head=head) as my_app:
         # ----- Per-browser-session state --------------------------------
         token_state = gr.State(None)
         user_state = gr.State(None)
@@ -380,7 +390,7 @@ def build_gradio_app() -> gr.Blocks:
                             "(you can re-ingest with a different category later if needed)."
                         )
                         file_upload = gr.File(
-                            label="Upload files",
+                            label="Upload .txt or .pdf files",
                             file_types=[".txt", ".pdf"],
                             file_count="multiple",
                         )
