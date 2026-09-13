@@ -3,10 +3,12 @@ app/main.py — FastAPI application factory.
 """
 import logging
 import sys
+import pathlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlmodel import Session
 
 from app.core.config import settings
@@ -87,6 +89,10 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+
+    @app.get("/ui/favicon.ico", include_in_schema=False)
+    async def favicon():
+        return FileResponse(pathlib.Path(__file__).parent.parent / "data" / "icons" / "favicon.ico")
 
     # Mount the Gradio chat UI at /ui — talks to this same FastAPI app over HTTP
     try:
